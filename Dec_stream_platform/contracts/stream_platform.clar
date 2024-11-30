@@ -314,3 +314,33 @@
         })
     )
 )
+
+(define-read-only (get-playlist 
+    (playlist-id uint)
+    (owner principal))
+    (map-get? UserPlaylists {playlist-id: playlist-id, owner: owner})
+)
+
+;; Creator rewards and leveling
+(define-public (level-up-creator)
+    (let
+        ((creator-info (unwrap! (map-get? CreatorInfo {creator: tx-sender}) ERR-NOT-AUTHORIZED)))
+        
+        (asserts! 
+            (and
+                (>= (get subscriber-count creator-info) (* (get creator-level creator-info) u100))
+                (>= (get total-content creator-info) (* (get creator-level creator-info) u10))
+            )
+            ERR-NOT-AUTHORIZED
+        )
+        
+        (map-set CreatorInfo
+            {creator: tx-sender}
+            (merge creator-info 
+                {creator-level: (+ (get creator-level creator-info) u1)}
+            )
+        )
+        
+        (ok true)
+    )
+)
