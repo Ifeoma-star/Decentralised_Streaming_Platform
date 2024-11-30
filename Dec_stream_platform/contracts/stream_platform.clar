@@ -12,3 +12,8 @@
 (define-constant ERR-INVALID-DURATION (err u108))
 (define-constant ERR-SUBSCRIPTION-EXPIRED (err u109))
 (define-constant ERR-ALREADY-RATED (err u110))
+
+;; Data variables
+(define-data-var platform-fee uint u5)
+(define-data-var subscription-fee uint u50)
+(define-data-var platform-owner principal tx-sender)
