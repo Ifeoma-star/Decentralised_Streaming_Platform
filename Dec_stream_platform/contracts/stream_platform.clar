@@ -164,3 +164,54 @@
         )
     )
 )
+
+(define-public (subscribe-to-creator 
+    (creator principal)
+    (duration uint)
+    (subscription-type (string-ascii 16)))
+    (let
+        ((subscription-cost (* (var-get subscription-fee) duration))
+         (current-subscription (map-get? Subscriptions {subscriber: tx-sender, creator: creator})))
+        
+        (asserts! (> duration u0) ERR-INVALID-DURATION)
+        (asserts! (is-none current-subscription) ERR-ALREADY-SUBSCRIBED)
+        
+        ;; Process payment
+        (try! (stx-transfer? subscription-cost tx-sender creator))
+        
+        ;; Set subscription
+        (map-set Subscriptions
+            {subscriber: tx-sender, creator: creator}
+            {
+                start-height: block-height,
+                end-height: (+ block-height (* duration u144)), ;; assuming 144 blocks per day
+                subscription-type: subscription-type
+            }
+        )
+        
+        ;; Update creator stats
+        (match (map-get? CreatorInfo {creator: creator})
+            prev-info ;; if-some case
+            (map-set CreatorInfo
+                {creator: creator}
+                (merge prev-info 
+                    {subscriber-count: (+ (default-to u0 (some (get subscriber-count prev-info))) u1)}
+                )
+            )
+            ;; if-none case - create new creator info if it doesn't exist
+            (map-set CreatorInfo
+                {creator: creator}
+                {
+                    total-content: u0,
+                    total-earnings: u0,
+                    verified: false,
+                    subscriber-count: u1,
+                    join-height: block-height,
+                    creator-level: u1
+                }
+            )
+        )
+        
+        (ok true)
+    )
+)
