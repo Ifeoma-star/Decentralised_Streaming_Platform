@@ -215,3 +215,33 @@
         (ok true)
     )
 )
+
+;; Content rating system
+(define-public (rate-content (content-id uint) (rating uint))
+    (let
+        ((content (unwrap! (map-get? ContentInfo {content-id: content-id}) ERR-CONTENT-NOT-FOUND)))
+        
+        (asserts! (and (>= rating u1) (<= rating u5)) ERR-INVALID-RATING)
+        (asserts! (is-none (map-get? UserRatings {content-id: content-id, user: tx-sender})) ERR-ALREADY-RATED)
+        
+        ;; Record user rating
+        (map-set UserRatings
+            {content-id: content-id, user: tx-sender}
+            {rating: rating}
+        )
+        
+        ;; Update content rating
+        (map-set ContentInfo
+            {content-id: content-id}
+            (merge content 
+                {
+                    rating-sum: (+ (get rating-sum content) rating),
+                    rating-count: (+ (get rating-count content) u1)
+                }
+            )
+        )
+        
+        (ok true)
+    )
+)
+
