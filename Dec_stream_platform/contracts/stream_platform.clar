@@ -298,3 +298,19 @@
         ERR-CONTENT-NOT-FOUND
     )
 )
+
+(define-read-only (get-subscription-status 
+    (subscriber principal)
+    (creator principal))
+    (match (map-get? Subscriptions {subscriber: subscriber, creator: creator})
+        subscription
+        (ok {
+            is-active: (<= block-height (get end-height subscription)),
+            remaining-blocks: (- (get end-height subscription) block-height)
+        })
+        (ok {
+            is-active: false,
+            remaining-blocks: u0
+        })
+    )
+)
