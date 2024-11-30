@@ -283,3 +283,18 @@
         (ok true)
     )
 )
+
+(define-read-only (get-content-rating (content-id uint))
+    (match (map-get? ContentInfo {content-id: content-id})
+        content
+        (let
+            ((rating-sum (get rating-sum content))
+             (rating-count (get rating-count content)))
+            (if (> rating-count u0)
+                (ok (/ rating-sum rating-count))
+                (ok u0)
+            )
+        )
+        ERR-CONTENT-NOT-FOUND
+    )
+)
