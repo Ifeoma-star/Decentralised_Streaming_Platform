@@ -100,3 +100,67 @@
         (ok (var-set platform-fee new-fee))
     )
 )
+
+(define-public (publish-content 
+    (content-id uint) 
+    (title (string-ascii 64))
+    (description (string-ascii 256))
+    (price uint)
+    (is-nft bool)
+    (category (string-ascii 32))
+    (is-premium bool))
+    (let
+        ((creator tx-sender))
+        (asserts! (is-none (map-get? ContentInfo {content-id: content-id})) ERR-CONTENT-EXISTS)
+        (asserts! (> price u0) ERR-INVALID-PRICE)
+        
+        (map-set ContentInfo
+            {content-id: content-id}
+            {
+                creator: creator,
+                price: price,
+                title: title,
+                description: description,
+                is-nft: is-nft,
+                total-earnings: u0,
+                rating-sum: u0,
+                rating-count: u0,
+                category: category,
+                creation-height: block-height,
+                is-premium: is-premium
+            }
+        )
+        
+        (match (map-get? CreatorInfo {creator: creator})
+            prev-info ;; if-some case
+            (map-set CreatorInfo
+                {creator: creator}
+                {
+                    total-content: (+ (default-to u0 (some (get total-content prev-info))) u1),
+                    total-earnings: (default-to u0 (some (get total-earnings prev-info))),
+                    verified: (default-to false (some (get verified prev-info))),
+                    subscriber-count: (default-to u0 (some (get subscriber-count prev-info))),
+                    join-height: (default-to block-height (some (get join-height prev-info))),
+                    creator-level: (default-to u1 (some (get creator-level prev-info)))
+                }
+            )
+            ;; if-none case
+            (map-set CreatorInfo
+                {creator: creator}
+                {
+                    total-content: u1,
+                    total-earnings: u0,
+                    verified: false,
+                    subscriber-count: u0,
+                    join-height: block-height,
+                    creator-level: u1
+                }
+            )
+        )
+        
+        (if is-nft
+            (nft-mint? content-nft content-id creator)
+            (ok true)
+        )
+    )
+)
