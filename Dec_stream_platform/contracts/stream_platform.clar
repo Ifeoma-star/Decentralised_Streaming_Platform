@@ -245,3 +245,23 @@
     )
 )
 
+;; Playlist management
+(define-public (create-playlist 
+    (playlist-id uint)
+    (name (string-ascii 64))
+    (is-public bool))
+    (begin
+        (asserts! (is-none (map-get? UserPlaylists {playlist-id: playlist-id, owner: tx-sender})) ERR-CONTENT-EXISTS)
+        
+        (map-set UserPlaylists
+            {playlist-id: playlist-id, owner: tx-sender}
+            {
+                name: name,
+                content-ids: (list),
+                is-public: is-public
+            }
+        )
+        
+        (ok true)
+    )
+)
