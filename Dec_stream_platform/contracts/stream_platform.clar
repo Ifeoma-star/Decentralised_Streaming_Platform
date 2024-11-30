@@ -81,3 +81,22 @@
         is-public: bool
     }
 )
+
+;; NFT definitions
+(define-non-fungible-token content-nft uint)
+
+;; Administrative functions
+(define-public (set-platform-owner (new-owner principal))
+    (begin
+        (asserts! (is-eq tx-sender (var-get platform-owner)) ERR-NOT-AUTHORIZED)
+        (ok (var-set platform-owner new-owner))
+    )
+)
+
+(define-public (set-platform-fee (new-fee uint))
+    (begin
+        (asserts! (is-eq tx-sender (var-get platform-owner)) ERR-NOT-AUTHORIZED)
+        (asserts! (< new-fee u100) ERR-INVALID-PRICE)
+        (ok (var-set platform-fee new-fee))
+    )
+)
